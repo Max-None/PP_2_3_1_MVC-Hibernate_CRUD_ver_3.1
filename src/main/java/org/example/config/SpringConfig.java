@@ -6,6 +6,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
@@ -13,8 +20,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 import org.thymeleaf.spring5.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring5.view.ThymeleafViewResolver;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import javax.sql.DataSource;
+import java.util.Properties;
 
 @Configuration
 @ComponentScan("org.example")
@@ -24,10 +31,12 @@ import javax.persistence.Persistence;
 public class SpringConfig implements WebMvcConfigurer {
 
     private final ApplicationContext applicationContext;
+    private Environment environment;
 
     @Autowired
-    public SpringConfig(ApplicationContext applicationContext) {
+    public SpringConfig(ApplicationContext applicationContext, Environment environment) {
         this.applicationContext = applicationContext;
+        this.environment = environment;
     }
 
     @Bean
@@ -54,7 +63,41 @@ public class SpringConfig implements WebMvcConfigurer {
     }
 
     @Bean
-    public EntityManagerFactory entityManagerFactory() {
-        return Persistence.createEntityManagerFactory("persistence");
+    public LocalContainerEntityManagerFactoryBean getEntityManagerFactoryBean() {
+        LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
+        entityManagerFactoryBean.setJpaVendorAdapter(getJpaVendorAdapter());
+        entityManagerFactoryBean.setDataSource(getDataSource());
+        entityManagerFactoryBean.setPersistenceUnitName("persistenceUnit");
+        entityManagerFactoryBean.setPackagesToScan("org.example");
+        entityManagerFactoryBean.setJpaProperties(jpaProperties());
+        return entityManagerFactoryBean;
+    }
+
+    @Bean
+    public JpaVendorAdapter getJpaVendorAdapter() {
+        return new HibernateJpaVendorAdapter();
+    }
+
+    @Bean
+    public DataSource getDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(environment.getProperty("hibernate.driver_class"));
+        dataSource.setUrl(environment.getProperty("hibernate.connection.url"));
+        dataSource.setUsername(environment.getProperty("hibernate.connection.username"));
+        dataSource.setPassword(environment.getProperty("hibernate.connection.password"));
+        return dataSource;
+    }
+
+    @Bean
+    public PlatformTransactionManager txManager(){
+        return new JpaTransactionManager(
+                getEntityManagerFactoryBean().getObject());
+    }
+
+    private Properties jpaProperties() {
+        Properties properties = new Properties();
+        properties.put("hibernate.dialect", environment.getProperty("hibernate.dialect"));
+        properties.put("hibernate.show_sql", environment.getProperty("hibernate.show_sql"));
+        return properties;
     }
 }
