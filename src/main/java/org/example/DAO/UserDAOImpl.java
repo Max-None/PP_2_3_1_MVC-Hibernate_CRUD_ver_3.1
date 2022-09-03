@@ -2,13 +2,11 @@ package org.example.DAO;
 
 import org.example.models.User;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.util.List;
 
 @Repository
-@Transactional
 public class UserDAOImpl implements UserDAO {
     @PersistenceContext
     private EntityManager entityManager;
@@ -26,7 +24,6 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public void save(User user) {
         entityManager.persist(user);
-        entityManager.getTransaction().commit();
     }
 
     @Override
@@ -35,13 +32,11 @@ public class UserDAOImpl implements UserDAO {
         user.setName(modifiedUser.getName());
         user.setSurname(modifiedUser.getSurname());
         user.setAge(modifiedUser.getAge());
-        entityManager.getTransaction().commit();
     }
 
     @Override
     public void delete(int id) {
         User user = entityManager.find(User.class, id);
         entityManager.remove(user);
-        entityManager.getTransaction().commit();
     }
 }
