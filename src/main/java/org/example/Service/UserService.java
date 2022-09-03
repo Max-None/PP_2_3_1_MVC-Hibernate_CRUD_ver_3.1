@@ -1,38 +1,16 @@
 package org.example.Service;
 
-import org.example.DAO.UserDAO;
 import org.example.models.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
-@Service
-public class UserService {
-    UserDAO userDAO;
+public interface UserService {
+    List<User> index();
 
-    @Autowired
-    public UserService(UserDAO userDAO) {
-        this.userDAO = userDAO;
-    }
+    User getUserById(int id);
 
-    public List<User> index() {
-        return userDAO.index();
-    }
+    void save(User user);
 
-    public User getUserById(int id) {
-        return userDAO.getUserById(id);
-    }
+    void update(int id, User modifiedUser);
 
-    public void save(User user) {
-        userDAO.save(user);
-    }
-
-    public void update(int id, User modifiedUser) {
-        userDAO.update(id, modifiedUser);
-    }
-
-    public void delete(int id) {
-        userDAO.delete(id);
-    }
+    void delete(int id);
 }
